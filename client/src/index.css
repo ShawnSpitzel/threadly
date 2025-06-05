@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Earthy green color scheme */
+    --background: 255 255 255;
+    --foreground: 23 23 23;
+
+    --card: 255 255 255;
+    --card-foreground: 23 23 23;
+
+    --popover: 255 255 255;
+    --popover-foreground: 23 23 23;
+
+    --primary: 51 153 84;
+    --primary-foreground: 255 255 255;
+
+    --secondary: 245 245 245;
+    --secondary-foreground: 64 64 64;
+
+    --muted: 245 245 245;
+    --muted-foreground: 115 115 115;
+
+    --accent: 220 242 225;
+    --accent-foreground: 32 99 54;
+
+    --destructive: 239 68 68;
+    --destructive-foreground: 254 242 242;
+
+    --border: 229 229 229;
+    --input: 229 229 229;
+    --ring: 51 153 84;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 250 250 250;
+    --sidebar-foreground: 38 38 38;
+    --sidebar-primary: 51 153 84;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 245 245 245;
+    --sidebar-accent-foreground: 64 64 64;
+    --sidebar-border: 229 229 229;
+    --sidebar-ring: 51 153 84;
+  }
+
+  .dark {
+    --background: 23 23 23;
+    --foreground: 250 250 250;
+
+    --card: 38 38 38;
+    --card-foreground: 250 250 250;
+
+    --popover: 38 38 38;
+    --popover-foreground: 250 250 250;
+
+    --primary: 87 181 117;
+    --primary-foreground: 23 23 23;
+
+    --secondary: 64 64 64;
+    --secondary-foreground: 250 250 250;
+
+    --muted: 64 64 64;
+    --muted-foreground: 163 163 163;
+
+    --accent: 29 79 46;
+    --accent-foreground: 220 242 225;
+
+    --destructive: 127 29 29;
+    --destructive-foreground: 254 242 242;
+
+    --border: 64 64 64;
+    --input: 64 64 64;
+    --ring: 87 181 117;
+
+    --sidebar-background: 38 38 38;
+    --sidebar-foreground: 250 250 250;
+    --sidebar-primary: 87 181 117;
+    --sidebar-primary-foreground: 23 23 23;
+    --sidebar-accent: 64 64 64;
+    --sidebar-accent-foreground: 250 250 250;
+    --sidebar-border: 64 64 64;
+    --sidebar-ring: 87 181 117;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.neutral.300');
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.neutral.400');
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply backdrop-blur-sm bg-white/80 border border-white/20;
+  }
+  
+  .text-shadow {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+}
