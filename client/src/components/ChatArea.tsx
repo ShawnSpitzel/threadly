@@ -3,13 +3,16 @@ import ChatMessage from "./ChatMessage.tsx";
 import ChatInput from "./ChatInput.tsx";
 import ChatNotification from "./ChatNotification.tsx";
 import { isMessage, isNotification } from "@/utils/type-guards.tsx";
-import { User, Message, Notification, ChatItem } from "@/types/index.tsx";
+import { User, Message, Notification, ChatItem, ChatRoom as Chat } from "@/types/index.tsx";
 import { useWebSocket } from "@/hooks/use-socket.tsx";
-
-const ChatArea = () => {
+import { makeId } from "@/hooks/make-id.tsx";
+interface ChatAreaProps {
+  chat: Chat;
+}
+const ChatArea = ({chat} : ChatAreaProps) => {
   const { connect, sendMessage, messages, isConnected } = useWebSocket();
-  const user1Id = useId();
-  const user2Id = useId();
+  const user1Id = makeId();
+  const user2Id = makeId();
   
   const [users, setUsers] = useState<User[]>([
     {
@@ -50,9 +53,12 @@ const ChatArea = () => {
   }, [messages]);
 
   const handleSendMessage = (messageText: string) => {
+    const id = makeId();
     const newMessage: Message = {
+      id: id,
       message: messageText,
       author: currentUser,
+      channel: { id: "1", title: "General", users: [], lastMessage: "", timestamp: "", chatHistory: chatHistory}, // Placeholder for channel
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isUser: true
     };
@@ -71,7 +77,7 @@ const ChatArea = () => {
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {chat && chat.id ? "Chat Id: " + chat.id : "No Chat Selected"}
             </span>
           </div>
         </div>
@@ -112,7 +118,6 @@ const ChatArea = () => {
         <div className="max-w-4xl mx-auto">
           {chatHistory.map((item) => {
             if (isMessage(item)) {
-              // Check if message is from currently active user
               if (item.author.id === currentUser.id) {
                 item.isUser = true;
               } else {
