@@ -8,9 +8,9 @@ import (
 )
 //user object
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Avatar   string `json:"avatar,omitempty"`
+	ID       string `json:"id" bson:"_id"`
+	Username string `json:"username" bson:"username"`
+	Avatar   string `json:"avatar,omitempty" bson:"avatar,omitempty"`
 }
 //client object
 type Client struct {
@@ -19,40 +19,50 @@ type Client struct {
 	User User
 	Pool   *Pool
 }
+type ChatRoom struct {
+	ID string `json:"id" bson:"_id"`
+	Title string `json:"title" bson:"title"`
+	Users []User `json:"users" bson:"users"`
+	ChatHistory []ChatItem `json:"chatHistory" bson:"chatHistory"`
+	LastMessage string `json:"lastMessage" bson:"lastMessage"`
+	Timestamp string `json:"timestamp" bson:"timestamp"`
+}
 //message object
 type Message struct {
-	ID string `json:"id"`
-	DataType int `json:"dataType"`
-	MessageType string `json:"messageType"`
-	Message string `json:"message"`
-	Author User `json:"author"`
-	Timestamp string `json:"timestamp"`
+	ID string `json:"id" bson:"_id"`
+	DataType int `json:"dataType" bson:"dataType"`
+	MessageType string `json:"messageType" bson:"messageType"`
+	Message string `json:"message" bson:"message"`
+	Channel ChatRoom `json:"channel" bson:"channel"`
+	Author User `json:"author" bson:"author"`
+	Timestamp string `json:"timestamp" bson:"timestamp"`
 
 }
 //notification object
 type Notification struct {
-	ID string `json:"id"`
-	DataType int `json:"DataType"`
-	MessageType string `json:"messageType"`
-	Message string `json:"message"`
-	NotificationType string `json:"notificationType"`
-	Author User `json:"author"`
-	Timestamp string `json:"timestamp"`
+	ID string `json:"id" bson:"_id"`
+	DataType int `json:"DataType" bson:"DataType"`
+	MessageType string `json:"messageType" bson:"messageType"`
+	Message string `json:"message" bson:"message"`
+	NotificationType string `json:"notificationType" bson:"notificationType"`
+	Author User `json:"author" bson:"author"`
+	Timestamp string `json:"timestamp" bson:"timestamp"`
 }
+type ChatItem interface{}
+
 type IncomingMessage struct {
-    MessageType      string `json:"messageType"`
-    Message   string `json:"message"`
-    Author    User   `json:"author"`
-    Timestamp string `json:"timestamp"`
+    MessageType      string `json:"messageType" bson:"messageType"`
+    Message   string `json:"message" bson:"message"`
+    Author    User   `json:"author" bson:"author"`
+	Channel  ChatRoom `json:"channel" bson:"channel"`
+    Timestamp string `json:"timestamp" bson:"timestamp"`
 }
 //client read function
 func (c *Client) Read() {
-	//cleanup 
 	defer func() {
 		c.Pool.Disconnect <- c 
 		c.Conn.Close()       
 	}()
-	//read each message and broadcast to pool
 	for {
 		dataType, msg, err := c.Conn.ReadMessage()
 		if err != nil {
