@@ -44,6 +44,7 @@ type Notification struct {
 	DataType int `json:"DataType" bson:"DataType"`
 	MessageType string `json:"messageType" bson:"messageType"`
 	Message string `json:"message" bson:"message"`
+	Channel ChatRoom `json:"channel" bson:"channel"`
 	NotificationType string `json:"notificationType" bson:"notificationType"`
 	Author User `json:"author" bson:"author"`
 	Timestamp string `json:"timestamp" bson:"timestamp"`
@@ -51,10 +52,18 @@ type Notification struct {
 type ChatItem interface{}
 
 type IncomingMessage struct {
-    MessageType      string `json:"messageType" bson:"messageType"`
+    MessageType string `json:"messageType" bson:"messageType"`
     Message   string `json:"message" bson:"message"`
     Author    User   `json:"author" bson:"author"`
-	Channel  ChatRoom `json:"channel" bson:"channel"`
+	ChannelId string `json:"channelId" bson:"channelId"`
+    Timestamp string `json:"timestamp" bson:"timestamp"`
+}
+type IncomingNotification struct {
+    MessageType string `json:"messageType" bson:"messageType"`
+    Message   string `json:"message" bson:"message"`
+	NotificationType string `json:"notificationType" bson:"notificationType"`
+    Author    User   `json:"author" bson:"author"`
+	ChannelId string `json:"channelId" bson:"channelId"`
     Timestamp string `json:"timestamp" bson:"timestamp"`
 }
 //client read function

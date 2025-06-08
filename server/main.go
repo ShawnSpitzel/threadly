@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/ShawnSpitzel/chat-app-go/pkg/websocket"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
@@ -44,7 +46,51 @@ func initDb() (*mongo.Collection, *mongo.Collection, *mongo.Collection, error, *
 	messagesCollection := db.Collection("messages")
 	return usersCollection, chatRoomsCollection, messagesCollection, err, client
 }
+func handleCors(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+}
+func getChatRoomMessages(messagesCollection *mongo.Collection, w http.ResponseWriter, r *http.Request) {
+	handleCors(w, r)
+	ctx := context.TODO()
+	id := r.URL.Query().Get("id")
+	documents, err := messagesCollection.Find(ctx, map[string]interface{}{"channelId": id})
+	if err != nil {
+		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
+		return
+	}
+	var messages []bson.M
+	var chatItems []websocket.ChatItem
+	if err := documents.All(ctx, &messages); err != nil {
+		http.Error(w, "Failed to decode messages", http.StatusInternalServerError)
+		return
+	}
+	for _, item := range messages {
+		if item["messageType"] == "message"{
+			var msg websocket.IncomingMessage
+			bsonBytes, _ := bson.Marshal(item)
+			bson.Unmarshal(bsonBytes, &msg)
+			chatItems = append(chatItems, msg)
+			fmt.Println("Message: ", msg)
+		}
+		if item["messageType"] == "notification"{
+			var noti websocket.IncomingNotification
+			bsonBytes, _ := bson.Marshal(item)
+			bson.Unmarshal(bsonBytes, &noti)
+			chatItems = append(chatItems, noti)
+			fmt.Println("Notification: ", noti)
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(chatItems)
+}
 func handleMessageSend(messagesCollection *mongo.Collection, w http.ResponseWriter, r *http.Request) {
+	handleCors(w, r)
 	var msg websocket.IncomingMessage
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		http.Error(w, "Invalid message data", http.StatusBadRequest)
@@ -58,6 +104,7 @@ func handleMessageSend(messagesCollection *mongo.Collection, w http.ResponseWrit
 	w.WriteHeader(http.StatusOK)
 }
 func handleNewChatRoom(chatRoomsCollection *mongo.Collection, w http.ResponseWriter, r *http.Request) {
+	handleCors(w, r)
 	var chatRoom websocket.ChatRoom
 	if err := json.NewDecoder(r.Body).Decode(&chatRoom); err != nil {
 		http.Error(w, "Invalid chat room data", http.StatusBadRequest)
@@ -71,6 +118,7 @@ func handleNewChatRoom(chatRoomsCollection *mongo.Collection, w http.ResponseWri
 	w.WriteHeader(http.StatusCreated)
 }
 func handleNewUser(usersCollection *mongo.Collection, w http.ResponseWriter, r *http.Request) {
+	handleCors(w, r)
 	var user websocket.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Invalid user data", http.StatusBadRequest)
@@ -94,6 +142,9 @@ func main() {
 	})
 	http.HandleFunc("/new-user", func(w http.ResponseWriter, r *http.Request) {
 		handleNewUser(usersCollection, w, r)
+	})
+	http.HandleFunc("/chatroom-messages", func(w http.ResponseWriter, r *http.Request) {
+		getChatRoomMessages(messagesCollection, w, r)
 	})
 	defer func() {
 		if err = client.Disconnect(context.TODO()); err != nil {

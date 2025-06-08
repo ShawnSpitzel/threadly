@@ -1,9 +1,10 @@
-import { ChatItem, Message, User, Notification} from '@/types';
+import { ChatItem, Message, User, Notification, ChatRoom} from '@/types';
 import { useState, useEffect, useCallback } from 'react';
 type ServerMessageResponse = {
     id: string;
     messageType: 'message';
     message: string;
+    channel: ChatRoom
     author?: User;
     timestamp?: string;
 };
@@ -13,13 +14,14 @@ type ServerNotificationResponse = {
     messageType: 'notification';
     notificationType: 'join' | 'leave';
     message: string;
+    channel: ChatRoom;
     author?: User;
     timestamp?: string;
 };
 type ServerResponse = ServerMessageResponse | ServerNotificationResponse;
 export const useWebSocket = () => {
     const [socket, setSocket] = useState<WebSocket | null>(null);
-    const [messages, setMessages] = useState<ChatItem[]>([]);
+    const [messages, setMessages] = useState<ChatItem>();
     const [isConnected, setIsConnected] = useState(false);
 
     const connect = useCallback(() => {
@@ -37,9 +39,11 @@ export const useWebSocket = () => {
                 const serverResponse: ServerResponse = JSON.parse(msg.data);
                 
                 if (serverResponse.messageType === 'message') {
-                    const newMessage: Message = {
+                    const newMessage: ChatItem = {
                         id: serverResponse.id,
+                        messageType: 'message',
                         message: serverResponse.message,
+                        channelId: serverResponse.channel.id,
                         author: serverResponse.author || {
                             id: serverResponse.author?.id || '',
                             username: serverResponse.author?.username || 'Unknown',
@@ -49,27 +53,27 @@ export const useWebSocket = () => {
                             hour: '2-digit', 
                             minute: '2-digit' 
                         }),
-                        isUser: false
                     };
-                    
-                    setMessages(prev => [...prev, newMessage]);
-                    
+                    setMessages(newMessage);
+
                 } else if (serverResponse.messageType === 'notification') {
-                    const newNotification: Notification = {
+                    const newNotification: ChatItem = {
                         id: Date.now().toString(),
+                        messageType: 'notification',
+                        message: serverResponse.message,
                         type: serverResponse.notificationType,
-                        author: serverResponse.author || {
+                        author: {
                             id: 'system',
                             username: 'System',
                             avatar: ''
                         },
+                        channelId: serverResponse.channel.id,
                         timestamp: serverResponse.timestamp || new Date().toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 
                         })
                     };
-                    
-                    setMessages(prev => [...prev, newNotification]);
+                    setMessages(newNotification);
                 }
             } catch (error) {
                 console.error('Error parsing server message:', error);
@@ -99,6 +103,6 @@ export const useWebSocket = () => {
         sendMessage,
         messages,
         isConnected,
-        clearMessages: () => setMessages([])
+        clearMessages: () => setMessages(undefined)
     };
 };

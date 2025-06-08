@@ -7,12 +7,14 @@ import { User, Message, Notification, ChatItem, ChatRoom as Chat } from "@/types
 import { useWebSocket } from "@/hooks/use-socket.tsx";
 import { makeId } from "@/hooks/make-id.tsx";
 interface ChatAreaProps {
-  chat: Chat;
+  selectedChat: Chat;
+  onChatUpdate?: (chatId: string, newHistory: ChatItem[]) => void;
 }
-const ChatArea = ({chat} : ChatAreaProps) => {
+const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
   const { connect, sendMessage, messages, isConnected } = useWebSocket();
-  const user1Id = makeId();
-  const user2Id = makeId();
+  const serverUrl = "http://localhost:8080";
+  const user1Id = "user1";
+  const user2Id = "user2";
   
   const [users, setUsers] = useState<User[]>([
     {
@@ -32,6 +34,7 @@ const ChatArea = ({chat} : ChatAreaProps) => {
 
   useEffect(() => {
     connect();
+
   }, [connect]);
 
   const [chatHistory, setChatHistory] = useState<ChatItem[]>([]);
@@ -47,23 +50,76 @@ const ChatArea = ({chat} : ChatAreaProps) => {
   }, [chatHistory]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      setChatHistory(messages);
+    if (messages) {
+      if(isNotification(messages)) {
+        console.log("New notification sent:", messages);
+      }
     }
   }, [messages]);
 
+
+  useEffect(() => {
+  let cancelled = false;
+  
+  const fetchChatHistory = async () => {
+    if (!selectedChat?.id) return;
+    try {
+      const history = await getChatHistory(selectedChat.id);
+      if (!cancelled) {
+        setChatHistory(history);
+        onChatUpdate(selectedChat.id, history);
+      }
+    } catch (error) {
+      if (!cancelled) {
+        console.error("Error fetching chat history:", error);
+      }
+    } 
+  };
+  
+  fetchChatHistory();
+  return () => {
+    cancelled = true;
+  };
+}, [selectedChat?.id]);
+  const messageRequest = async (message: ChatItem) => {
+    try {
+      const res = await fetch(`${serverUrl}/new-message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(message)
+      });
+    }
+    catch (error) {
+      console.error("Error sending message:", error);
+    }
+  }
+  const getChatHistory = async (chatId: string) => {
+    try {
+      const res = await fetch(`${serverUrl}/chatroom-messages?id=${chatId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch chat history");
+      }
+      const data: ChatItem[] = await res.json();
+      console.log("Chat history fetched successfully:", data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+    }
+  }
   const handleSendMessage = (messageText: string) => {
-    const id = makeId();
-    const newMessage: Message = {
-      id: id,
-      message: messageText,
-      author: currentUser,
-      channel: { id: "1", title: "General", users: [], lastMessage: "", timestamp: "", chatHistory: chatHistory}, // Placeholder for channel
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isUser: true
-    };
-    sendMessage(JSON.stringify(newMessage));
-    setChatHistory(prev => [...prev, newMessage]);
+    if (messageText.length > 0){
+      const newMessage: Message = {
+        messageType: "message",
+        message: messageText,
+        author: currentUser,
+        channelId: selectedChat.id,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      sendMessage(JSON.stringify(newMessage));
+      messageRequest(newMessage);
+  }
   };
 
   const toggleUser = () => {
@@ -78,7 +134,7 @@ const ChatArea = ({chat} : ChatAreaProps) => {
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">
-              {chat && chat.id ? "Chat Id: " + chat.id : "No Chat Selected"}
+              {selectedChat && selectedChat.id ? "Chat Id: " + selectedChat.id : "No Chat Selected"}
             </span>
           </div>
         </div>
@@ -113,12 +169,12 @@ const ChatArea = ({chat} : ChatAreaProps) => {
           </button>
         </div>
       </div>
-      {chat && chat.id ? (
+      {selectedChat && selectedChat.id ? (
         <>
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-primary-50/30 to-neutral-50/30">
             <div className="max-w-4xl mx-auto">
-              {chatHistory.map((item) => {
+              {chatHistory?.map((item) => {
                 if (isMessage(item)) {
                   if (item.author.id === currentUser.id) {
                     item.isUser = true;

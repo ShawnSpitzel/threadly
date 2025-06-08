@@ -3,7 +3,7 @@ import { User as UserIcon, Bot as BotIcon } from "lucide-react";
 
 interface ChatMessageProps {
   message: string;
-  isUser: boolean;
+  isUser?: boolean;
   author: User;
   timestamp: string;
   avatar?: string;

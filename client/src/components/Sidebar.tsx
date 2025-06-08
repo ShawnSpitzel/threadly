@@ -23,7 +23,7 @@ const Sidebar = ({onSelectChat}:SidebarProps) => {
 
   const chats: Chat[] = [
     {
-      id: makeId(),
+      id: "1",
       title: "Welcome...",  
       users: [],
       chatHistory: [],
@@ -32,10 +32,10 @@ const Sidebar = ({onSelectChat}:SidebarProps) => {
       isActive: true
     },
     {
-      id: makeId(),
+      id: "2",
       title: "Welcome...",
       lastMessage: "...",
-       users: [],
+      users: [],
       chatHistory: [],
       timestamp: "2m ago",
       isActive: true

@@ -14,16 +14,19 @@ export interface ChatRoom {
 }
 export interface Message {
     id?: string;
+    messageType: string;
     message: string;
     author: User;
-    channel: ChatRoom;
+    channelId: String;
     timestamp: string;
-    isUser: boolean;
+    isUser?: boolean;
 }
 export interface Notification {
     id?: string;
+    messageType: string;
     type: 'join' | 'leave';
     author: User;
+    channelId: String;
     timestamp: string;
 }
 export type ChatItem = (Message) | (Notification);
