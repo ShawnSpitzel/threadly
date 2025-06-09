@@ -72,14 +72,14 @@ func getChatRoomMessages(messagesCollection *mongo.Collection, w http.ResponseWr
 	}
 	for _, item := range messages {
 		if item["messageType"] == "message"{
-			var msg websocket.IncomingMessage
+			var msg websocket.Message
 			bsonBytes, _ := bson.Marshal(item)
 			bson.Unmarshal(bsonBytes, &msg)
 			chatItems = append(chatItems, msg)
 			fmt.Println("Message: ", msg)
 		}
 		if item["messageType"] == "notification"{
-			var noti websocket.IncomingNotification
+			var noti websocket.Notification
 			bsonBytes, _ := bson.Marshal(item)
 			bson.Unmarshal(bsonBytes, &noti)
 			chatItems = append(chatItems, noti)

@@ -34,7 +34,6 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
 
   useEffect(() => {
     connect();
-
   }, [connect]);
 
   const [chatHistory, setChatHistory] = useState<ChatItem[]>([]);
@@ -49,38 +48,15 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
     scrollToBottom();
   }, [chatHistory]);
 
-  useEffect(() => {
-    if (messages) {
-      if(isNotification(messages)) {
-        console.log("New notification sent:", messages);
-      }
-    }
+ useEffect(() => {
+    console.log("Messages updated:", messages);
   }, [messages]);
 
-
   useEffect(() => {
-  let cancelled = false;
-  
-  const fetchChatHistory = async () => {
     if (!selectedChat?.id) return;
-    try {
-      const history = await getChatHistory(selectedChat.id);
-      if (!cancelled) {
-        setChatHistory(history);
-        onChatUpdate(selectedChat.id, history);
-      }
-    } catch (error) {
-      if (!cancelled) {
-        console.error("Error fetching chat history:", error);
-      }
-    } 
-  };
-  
-  fetchChatHistory();
-  return () => {
-    cancelled = true;
-  };
+    getChatHistory(selectedChat.id);
 }, [selectedChat?.id]);
+
   const messageRequest = async (message: ChatItem) => {
     try {
       const res = await fetch(`${serverUrl}/new-message`, {
@@ -103,7 +79,8 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
       }
       const data: ChatItem[] = await res.json();
       console.log("Chat history fetched successfully:", data);
-      return data;
+      setChatHistory(data);
+      onChatUpdate?.(selectedChat.id, data);
     } catch (error) {
       console.error("Error fetching chat history:", error);
     }
@@ -117,6 +94,7 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
         channelId: selectedChat.id,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
+      setChatHistory(prev => [...prev, newMessage]);
       sendMessage(JSON.stringify(newMessage));
       messageRequest(newMessage);
   }
@@ -174,34 +152,24 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-primary-50/30 to-neutral-50/30">
             <div className="max-w-4xl mx-auto">
-              {chatHistory?.map((item) => {
-                if (isMessage(item)) {
-                  if (item.author.id === currentUser.id) {
-                    item.isUser = true;
-                  } else {
-                    item.isUser = false;
-                  }
-                  return (
-                    <ChatMessage
-                      key={item.id}
-                      message={item.message}
-                      author={item.author}
-                      timestamp={item.timestamp}
-                      isUser={item.isUser}
-                    />
-                  );
-                } else if (isNotification(item)) {
-                  return (
-                    <ChatNotification
-                      key={item.id}
-                      type={item.type === 'join' ? "join" : "leave"}
-                      author={item.author}
-                      timestamp={item.timestamp}
-                    />
-                  );
-                }
-                return null;
-              })}
+              {chatHistory.map(item => (
+              isMessage(item) ? (
+                <ChatMessage
+                  key={item.id}
+                  message={item.message}
+                  author={item.author}
+                  timestamp={item.timestamp}
+                  isUser={item.author.id === currentUser.id}
+                />
+              ) : (
+                <ChatNotification
+                  key={item.id}
+                  type={item.type}
+                  author={item.author}
+                  timestamp={item.timestamp}
+                />
+              )
+            ))}
               <div ref={messagesEndRef} />
             </div>
           </div>

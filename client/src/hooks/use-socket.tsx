@@ -55,6 +55,7 @@ export const useWebSocket = () => {
                         }),
                     };
                     setMessages(newMessage);
+                    console.log("New message received from backend:", newMessage);
 
                 } else if (serverResponse.messageType === 'notification') {
                     const newNotification: ChatItem = {
