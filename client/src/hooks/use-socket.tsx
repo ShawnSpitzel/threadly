@@ -4,8 +4,8 @@ type ServerMessageResponse = {
     id: string;
     messageType: 'message';
     message: string;
-    channel: ChatRoom
-    author?: User;
+    channelId: string;
+    authorId: string;
     timestamp?: string;
 };
 
@@ -14,8 +14,8 @@ type ServerNotificationResponse = {
     messageType: 'notification';
     notificationType: 'join' | 'leave';
     message: string;
-    channel: ChatRoom;
-    author?: User;
+    channelId: string;
+    authorId: string;
     timestamp?: string;
 };
 type ServerResponse = ServerMessageResponse | ServerNotificationResponse;
@@ -43,12 +43,8 @@ export const useWebSocket = () => {
                         id: serverResponse.id,
                         messageType: 'message',
                         message: serverResponse.message,
-                        channelId: serverResponse.channel.id,
-                        author: serverResponse.author || {
-                            id: serverResponse.author?.id || '',
-                            username: serverResponse.author?.username || 'Unknown',
-                            avatar: serverResponse.author?.avatar || ''
-                        },
+                        channelId: serverResponse.channelId,
+                        authorId: serverResponse.authorId,
                         timestamp: serverResponse.timestamp || new Date().toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 
@@ -59,16 +55,12 @@ export const useWebSocket = () => {
 
                 } else if (serverResponse.messageType === 'notification') {
                     const newNotification: ChatItem = {
-                        id: Date.now().toString(),
+                        id: serverResponse.id,
                         messageType: 'notification',
                         message: serverResponse.message,
                         type: serverResponse.notificationType,
-                        author: {
-                            id: 'system',
-                            username: 'System',
-                            avatar: ''
-                        },
-                        channelId: serverResponse.channel.id,
+                        authorId: serverResponse.authorId || 'System',
+                        channelId: serverResponse.channelId,
                         timestamp: serverResponse.timestamp || new Date().toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 

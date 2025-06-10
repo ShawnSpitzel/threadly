@@ -33,8 +33,8 @@ type Message struct {
 	DataType int `json:"dataType" bson:"dataType"`
 	MessageType string `json:"messageType" bson:"messageType"`
 	Message string `json:"message" bson:"message"`
-	Channel ChatRoom `json:"channel" bson:"channel"`
-	Author User `json:"author" bson:"author"`
+	ChannelId string `json:"channelId" bson:"channelId"`
+	AuthorId  string   `json:"authorId" bson:"authorId"`
 	Timestamp string `json:"timestamp" bson:"timestamp"`
 
 }
@@ -44,9 +44,9 @@ type Notification struct {
 	DataType int `json:"DataType" bson:"DataType"`
 	MessageType string `json:"messageType" bson:"messageType"`
 	Message string `json:"message" bson:"message"`
-	Channel ChatRoom `json:"channel" bson:"channel"`
+	ChannelId string `json:"channelId" bson:"channelId"`
 	NotificationType string `json:"notificationType" bson:"notificationType"`
-	Author User `json:"author" bson:"author"`
+	AuthorId  string   `json:"authorId" bson:"authorId"`
 	Timestamp string `json:"timestamp" bson:"timestamp"`
 }
 type ChatItem interface{}
@@ -54,7 +54,7 @@ type ChatItem interface{}
 type IncomingMessage struct {
     MessageType string `json:"messageType" bson:"messageType"`
     Message   string `json:"message" bson:"message"`
-    Author    User   `json:"author" bson:"author"`
+    AuthorId  string   `json:"authorId" bson:"authorId"`
 	ChannelId string `json:"channelId" bson:"channelId"`
     Timestamp string `json:"timestamp" bson:"timestamp"`
 }
@@ -62,7 +62,7 @@ type IncomingNotification struct {
     MessageType string `json:"messageType" bson:"messageType"`
     Message   string `json:"message" bson:"message"`
 	NotificationType string `json:"notificationType" bson:"notificationType"`
-    Author    User   `json:"author" bson:"author"`
+    AuthorId  string   `json:"authorId" bson:"authorId"`
 	ChannelId string `json:"channelId" bson:"channelId"`
     Timestamp string `json:"timestamp" bson:"timestamp"`
 }
@@ -86,7 +86,7 @@ func (c *Client) Read() {
                 DataType:    dataType,
                 MessageType: "message",
                 Message:     string(msg),
-                Author:      c.User,
+                AuthorId:      "",
                 Timestamp:   getTime(),
             }
             c.Pool.Broadcast <- message
@@ -97,7 +97,8 @@ func (c *Client) Read() {
             DataType:    dataType,
             MessageType: "message",
             Message:     incomingMsg.Message,
-            Author:      incomingMsg.Author,
+            AuthorId:      incomingMsg.AuthorId,
+			ChannelId: incomingMsg.ChannelId,
             Timestamp:   incomingMsg.Timestamp,  
         }
 

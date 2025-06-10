@@ -16,8 +16,8 @@ export interface Message {
     id?: string;
     messageType: string;
     message: string;
-    author: User;
-    channelId: String;
+    authorId: string;
+    channelId: string;
     timestamp: string;
     isUser?: boolean;
 }
@@ -25,8 +25,8 @@ export interface Notification {
     id?: string;
     messageType: string;
     type: 'join' | 'leave';
-    author: User;
-    channelId: String;
+    authorId: string;
+    channelId: string;
     timestamp: string;
 }
 export type ChatItem = (Message) | (Notification);

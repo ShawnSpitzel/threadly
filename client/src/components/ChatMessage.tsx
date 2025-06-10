@@ -4,7 +4,7 @@ import { User as UserIcon, Bot as BotIcon } from "lucide-react";
 interface ChatMessageProps {
   message: string;
   isUser?: boolean;
-  author: User;
+  authorId: string;
   timestamp: string;
   avatar?: string;
 }
@@ -13,7 +13,7 @@ const ChatMessage = ({
   message,
   isUser,
   timestamp,
-  author,
+  authorId,
   avatar,
 }: ChatMessageProps) => {
   return (
@@ -42,7 +42,7 @@ const ChatMessage = ({
       >
         <div className={`mb-1 ${isUser ? "text-right" : ""}`}>
           <span className="text-xs font-medium text-neutral-600">
-            {author.username || (isUser ? "You" : "Assistant")}
+            {authorId || (isUser ? "You" : "Assistant")}
           </span>
         </div>
         <div

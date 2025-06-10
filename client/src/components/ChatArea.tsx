@@ -3,30 +3,36 @@ import ChatMessage from "./ChatMessage.tsx";
 import ChatInput from "./ChatInput.tsx";
 import ChatNotification from "./ChatNotification.tsx";
 import { isMessage, isNotification } from "@/utils/type-guards.tsx";
-import { User, Message, Notification, ChatItem, ChatRoom as Chat } from "@/types/index.tsx";
+import {
+  User,
+  Message,
+  Notification,
+  ChatItem,
+  ChatRoom as Chat,
+} from "@/types/index.tsx";
 import { useWebSocket } from "@/hooks/use-socket.tsx";
 import { makeId } from "@/hooks/make-id.tsx";
 interface ChatAreaProps {
   selectedChat: Chat;
   onChatUpdate?: (chatId: string, newHistory: ChatItem[]) => void;
 }
-const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
+const ChatArea = ({ selectedChat, onChatUpdate }: ChatAreaProps) => {
   const { connect, sendMessage, messages, isConnected } = useWebSocket();
   const serverUrl = "http://localhost:8080";
   const user1Id = "user1";
   const user2Id = "user2";
-  
+
   const [users, setUsers] = useState<User[]>([
     {
       id: user1Id,
       username: "Alex Chen",
-      avatar: "https://avatars.githubusercontent.com/u/12345678?v=4"
+      avatar: "https://avatars.githubusercontent.com/u/12345678?v=4",
     },
     {
       id: user2Id,
       username: "Assistant",
-      avatar: "https://avatars.githubusercontent.com/u/12345678?v=4"
-    }
+      avatar: "https://avatars.githubusercontent.com/u/12345678?v=4",
+    },
   ]);
 
   const [currentUserIndex, setCurrentUserIndex] = useState(0);
@@ -48,29 +54,37 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
     scrollToBottom();
   }, [chatHistory]);
 
- useEffect(() => {
+  useEffect(() => {
+      if (messages){
     console.log("Messages updated:", messages);
-  }, [messages]);
+    setChatHistory((prev) => {
+      if (isNotification(messages)) {
+        return [...prev, messages];
+      }
+      else {
+        return prev
+      }
+    });
+}}, [messages]);
 
   useEffect(() => {
     if (!selectedChat?.id) return;
     getChatHistory(selectedChat.id);
-}, [selectedChat?.id]);
+  }, [selectedChat?.id]);
 
   const messageRequest = async (message: ChatItem) => {
     try {
       const res = await fetch(`${serverUrl}/new-message`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(message)
+        body: JSON.stringify(message),
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error sending message:", error);
     }
-  }
+  };
   const getChatHistory = async (chatId: string) => {
     try {
       const res = await fetch(`${serverUrl}/chatroom-messages?id=${chatId}`);
@@ -84,24 +98,27 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
     } catch (error) {
       console.error("Error fetching chat history:", error);
     }
-  }
+  };
   const handleSendMessage = (messageText: string) => {
-    if (messageText.length > 0){
+    if (messageText.length > 0) {
       const newMessage: Message = {
         messageType: "message",
         message: messageText,
-        author: currentUser,
+        authorId: currentUser.id,
         channelId: selectedChat.id,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
-      setChatHistory(prev => [...prev, newMessage]);
+      setChatHistory((prev) => [...prev, newMessage]);
       sendMessage(JSON.stringify(newMessage));
       messageRequest(newMessage);
-  }
+    }
   };
 
   const toggleUser = () => {
-    setCurrentUserIndex(prev => prev === 0 ? 1 : 0);
+    setCurrentUserIndex((prev) => (prev === 0 ? 1 : 0));
   };
 
   return (
@@ -112,11 +129,13 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">
-              {selectedChat && selectedChat.id ? "Chat Id: " + selectedChat.id : "No Chat Selected"}
+              {selectedChat && selectedChat.id
+                ? "Chat Id: " + selectedChat.id
+                : "No Chat Selected"}
             </span>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <span className="text-sm text-gray-600">Sending as:</span>
           <button
@@ -152,24 +171,34 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-primary-50/30 to-neutral-50/30">
             <div className="max-w-4xl mx-auto">
-              {chatHistory.map(item => (
-              isMessage(item) ? (
-                <ChatMessage
-                  key={item.id}
-                  message={item.message}
-                  author={item.author}
-                  timestamp={item.timestamp}
-                  isUser={item.author.id === currentUser.id}
-                />
+              {chatHistory && chatHistory.length > 0 ? (
+                chatHistory
+                  .map((item) => {
+                    return isMessage(item) ? (
+                      <ChatMessage
+                        key={item.id}
+                        message={item.message || ""}
+                        authorId={item.authorId || "unknown"}
+                        timestamp={item.timestamp || ""}
+                        isUser={item.authorId === currentUser?.id}
+                      />
+                    ) : (
+                      <ChatNotification
+                        key={item.id}
+                        type={item.type || "join"}
+                        authorId={item.authorId || "unknown"}
+                        timestamp={item.timestamp || ""}
+                      />
+                    );
+                  })
+                  .filter(Boolean)
               ) : (
-                <ChatNotification
-                  key={item.id}
-                  type={item.type}
-                  author={item.author}
-                  timestamp={item.timestamp}
-                />
-              )
-            ))}
+                <div className="text-center text-gray-500 py-4">
+                  {chatHistory === null
+                    ? "No messages yet"
+                    : "Loading.."}
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -198,7 +227,8 @@ const ChatArea = ({selectedChat, onChatUpdate} : ChatAreaProps) => {
               No Chat Selected
             </h3>
             <p className="text-gray-500 max-w-sm mx-auto">
-              Select a chat from the sidebar to start messaging, or create a new chat to begin a conversation.
+              Select a chat from the sidebar to start messaging, or create a new
+              chat to begin a conversation.
             </p>
           </div>
         </div>
