@@ -5,6 +5,7 @@ import (
     "log"
 	"fmt"
     "github.com/gorilla/websocket"
+	"github.com/ShawnSpitzel/chat-app-go/pkg/redisdb"
 )
 //user object
 type User struct {
@@ -18,6 +19,7 @@ type Client struct {
 	Conn   *websocket.Conn
 	User User
 	Pool   *Pool
+	ChannelId string
 }
 type ChatRoom struct {
 	ID string `json:"id" bson:"_id"`
@@ -101,9 +103,24 @@ func (c *Client) Read() {
 			ChannelId: incomingMsg.ChannelId,
             Timestamp:   incomingMsg.Timestamp,  
         }
+		if incomingMsg.MessageType == "join" {
+			c.ChannelId = incomingMsg.ChannelId
+			go c.listenToRedisChannel(incomingMsg.ChannelId) // 👈 Start Redis subscription
+			log.Printf("Client %s joined channel %s\n", c.ID, c.ChannelId)
+			return
+		}
 
 		c.Pool.Broadcast <- message
         fmt.Printf("Message Received: %+v\n", message)
 	}
 	}
+}
+func (c *Client) listenToRedisChannel(channelId string) {
+	redisdb.Subscribe("chatroom:"+channelId, func(msg []byte) {
+		log.Printf("Redis -> WS [%s]: %s", channelId, msg)
+		err := c.Conn.WriteMessage(websocket.TextMessage, msg)
+		if err != nil {
+			log.Printf("WebSocket write error: %v", err)
+		}
+	})
 }

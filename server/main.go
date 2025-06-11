@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/ShawnSpitzel/chat-app-go/pkg/websocket"
+	"github.com/ShawnSpitzel/chat-app-go/pkg/redisdb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -15,7 +16,7 @@ import (
 )
 
 func serveWebSocket(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
-	ws, err := websocket.Upgrade(w, r) // Upgrade HTTP connection to WebSocket
+	ws, err := websocket.Upgrade(w, r)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
 	}
@@ -23,8 +24,7 @@ func serveWebSocket(pool *websocket.Pool, w http.ResponseWriter, r *http.Request
 		Conn: ws,
 		Pool: pool,
 	}
-	pool.Connect <- client // Add the new client to the pool
-	client.Read()
+	pool.Connect <- client
 }
 func setupRoutes() {
 	pool := websocket.NewPool()
@@ -32,6 +32,7 @@ func setupRoutes() {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWebSocket(pool, w, r)
 	})
+	
 }
 func initDb() (*mongo.Collection, *mongo.Collection, *mongo.Collection, error, *mongo.Client) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -101,6 +102,9 @@ func handleMessageSend(messagesCollection *mongo.Collection, w http.ResponseWrit
 		http.Error(w, "Failed to send message", http.StatusInternalServerError)
 		return
 	}
+	if err := redisdb.Publish(msg.ChannelId, msg); err != nil {
+    	log.Println("Error publishing message:", err)
+	}
 	w.WriteHeader(http.StatusOK)
 }
 func handleNewChatRoom(chatRoomsCollection *mongo.Collection, w http.ResponseWriter, r *http.Request) {
@@ -132,6 +136,7 @@ func handleNewUser(usersCollection *mongo.Collection, w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusCreated)
 }
 func main() {
+	redisdb.InitRedis()
 	usersCollection, chatRoomsCollection, messagesCollection, err, client := initDb()
 
 	http.HandleFunc("/new-message", func(w http.ResponseWriter, r *http.Request) {

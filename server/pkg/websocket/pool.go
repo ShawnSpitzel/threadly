@@ -38,13 +38,13 @@ func (pool *Pool) Start() {
 			fmt.Println("Size of Connection Pool: ", len(pool.Clients))
 			for client := range pool.Clients {
                 fmt.Println(client)
-                client.Conn.WriteJSON(Notification{ID: makeId(), DataType: 1, Message: "New User Joined...",  MessageType: "notification", NotificationType: "join", Timestamp: getTime()})
+                client.Conn.WriteJSON(Notification{ID: makeId(), DataType: 1, Message: "New User Joined...",  MessageType: "notification", NotificationType: "join", Timestamp: getTime(), ChannelId: client.ChannelId})
             }
 		case client := <-pool.Disconnect: //in the case our client disconnects from the pool
             delete(pool.Clients, client)
             fmt.Println("Size of Connection Pool: ", len(pool.Clients))
             for client, _ := range pool.Clients {
-                client.Conn.WriteJSON(Notification{ID: makeId(), DataType: 1, Message: "User Disconnected..." ,MessageType: "notification", NotificationType: "leave", Timestamp: getTime()})
+                client.Conn.WriteJSON(Notification{ID: makeId(), DataType: 1, Message: "User Disconnected..." ,MessageType: "notification", NotificationType: "leave", Timestamp: getTime(), ChannelId: client.ChannelId})
             }
 		case message := <-pool.Broadcast:
             fmt.Println("Sending message to all clients in Pool")
