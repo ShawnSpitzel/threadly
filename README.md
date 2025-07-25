@@ -34,7 +34,7 @@ A scalable, real-time chat application built with Go, React, MongoDB, Redis, and
 - MongoDB and Redis instances (local or Docker)
 
 ### 1. Clone the repo
-`git clone https://github.com/yourusername/distributed-chat-app.git
+`git clone https://github.com/ShawnSpitzel/Chat-App.git
 cd distributed-chat-app`
 ### 2. Start backend
 `cd server
