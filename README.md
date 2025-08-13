@@ -6,9 +6,9 @@ A scalable, real-time chat application built with Go, React, MongoDB, Redis, and
   
 - Frontend: React.js
 
-- Database: MongoDB (message persistence, user data)
+- Database: MongoDB
 
-- Caching / Messaging: Redis (Pub/Sub, session store)
+- Caching / Messaging: Redis
 
 - Transport: WebSockets 
 
@@ -20,10 +20,6 @@ A scalable, real-time chat application built with Go, React, MongoDB, Redis, and
 - User authentication and session management
 
 - Persistent chat history stored in MongoDB
-
-- Clean, responsive React frontend
-
-- Distributed deployment-ready architecture
 
 ## 🛠️ Running Locally
 ### Prerequisites
