@@ -1,4 +1,4 @@
-# 🌱 Threadly ~ Messaging App
+# Threadly
 A scalable, real-time chat application built with Go, React, MongoDB, Redis, and WebSockets. Designed for low-latency message delivery and horizontal scalability, supporting multiple concurrent users across distributed nodes.
 
 ## ⚙️ Tech Stack
